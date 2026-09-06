@@ -165,6 +165,9 @@ impl PackDownloader {
             .cloned()
             .unwrap_or_else(|| (String::new(), String::new(), 0));
 
+        let calculated_chunk_count = (compressed_size + max_chunk_size as u64 - 1) / max_chunk_size as u64;
+        let real_chunk_count = chunk_count.max(calculated_chunk_count as u32);
+
         self.active.insert(
             pack_id.to_string(),
             Pending {
@@ -172,7 +175,7 @@ impl PackDownloader {
                 version,
                 key,
                 buf: Vec::with_capacity(compressed_size as usize),
-                chunk_count,
+                chunk_count: real_chunk_count,
                 next_chunk: 0,
                 received: 0,
                 max_chunk_size,
@@ -181,7 +184,7 @@ impl PackDownloader {
             },
         );
 
-        let window = CHUNK_WINDOW.min(chunk_count);
+        let window = CHUNK_WINDOW.min(real_chunk_count);
         if let Some(p) = self.active.get_mut(pack_id) {
             p.next_chunk = window;
         }
