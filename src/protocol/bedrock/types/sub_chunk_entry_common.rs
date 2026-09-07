@@ -35,18 +35,20 @@ impl SubChunkEntryCommon {
         let request_result = stream.get_u8();
         let terrain_data = PacketSerializer::read_optional(stream, |s| PacketSerializer::get_byte_string(s));
         let height_map_data_type = stream.get_u8();
+        let height_map_data = PacketSerializer::read_optional(stream, |s| SubChunkHeightMapInfo::read(s));
         let height_map = match height_map_data_type {
             SubChunkHeightMapType::NO_DATA => None,
-            SubChunkHeightMapType::DATA => PacketSerializer::read_optional(stream, |s| SubChunkHeightMapInfo::read(s)),
+            SubChunkHeightMapType::DATA => height_map_data,
             SubChunkHeightMapType::ALL_TOO_HIGH => Some(SubChunkHeightMapInfo::all_too_high()),
             SubChunkHeightMapType::ALL_TOO_LOW => Some(SubChunkHeightMapInfo::all_too_low()),
             _ => panic!("Unknown heightmap data type {}", height_map_data_type),
         };
 
         let render_height_map_data_type = stream.get_u8();
+        let render_height_map_data = PacketSerializer::read_optional(stream, |s| SubChunkHeightMapInfo::read(s));
         let render_height_map = match render_height_map_data_type {
             SubChunkHeightMapType::NO_DATA => None,
-            SubChunkHeightMapType::DATA => PacketSerializer::read_optional(stream, |s| SubChunkHeightMapInfo::read(s)),
+            SubChunkHeightMapType::DATA => render_height_map_data,
             SubChunkHeightMapType::ALL_TOO_HIGH => Some(SubChunkHeightMapInfo::all_too_high()),
             SubChunkHeightMapType::ALL_TOO_LOW => Some(SubChunkHeightMapInfo::all_too_low()),
             SubChunkHeightMapType::ALL_COPIED => height_map.clone(),
