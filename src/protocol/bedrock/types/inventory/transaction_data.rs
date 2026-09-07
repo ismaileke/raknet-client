@@ -80,9 +80,10 @@ impl TransactionData {
 
 
     pub fn encode(&self, stream: &mut Writer) {
-        let has_value = self.get_actions().len() > 0;
+        /*let has_value = self.get_actions().len() > 0;
         stream.put_bool(has_value);
-        if !has_value { return }
+        if !has_value { return }*/
+        stream.put_bool(true);
         stream.put_var_u32(self.get_actions().len() as u32);
         for action in self.get_actions() {
             action.write(stream);
