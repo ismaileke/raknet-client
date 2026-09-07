@@ -1,4 +1,3 @@
-use crate::protocol::bedrock::serializer::packet_serializer::PacketSerializer;
 use crate::protocol::bedrock::types::inventory::full_container_name::FullContainerName;
 use binary_utils::binary::{Reader, Writer};
 
