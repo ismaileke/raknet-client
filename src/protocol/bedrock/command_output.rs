@@ -7,11 +7,11 @@ use binary_utils::binary::{Reader, Writer};
 
 #[derive(serde::Serialize, Debug)]
 pub struct CommandOutput {
-    origin_data: CommandOriginData,
-    output_type: String,
-    success_count: u32,
-    messages: Vec<CommandOutputMessage>,
-    data: Option<String>
+    pub origin_data: CommandOriginData,
+    pub output_type: String,
+    pub success_count: u32,
+    pub messages: Vec<CommandOutputMessage>,
+    pub data: Option<String>
 }
 
 impl Packet for CommandOutput {
