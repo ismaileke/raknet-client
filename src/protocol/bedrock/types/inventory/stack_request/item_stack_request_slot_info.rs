@@ -17,7 +17,7 @@ impl ItemStackRequestSlotInfo {
     pub fn read(stream: &mut Reader) -> ItemStackRequestSlotInfo {
         let container_name = FullContainerName::read(stream);
         let slot_id = stream.get_u8();
-        let stack_id = PacketSerializer::read_item_stack_net_id_variant(stream);
+        let stack_id = stream.get_i32_le();
 
         ItemStackRequestSlotInfo { container_name, slot_id, stack_id }
     }
@@ -25,6 +25,6 @@ impl ItemStackRequestSlotInfo {
     pub fn write(&self, stream: &mut Writer) {
         self.container_name.write(stream);
         stream.put_u8(self.slot_id);
-        PacketSerializer::write_item_stack_net_id_variant(stream, self.stack_id);
+        stream.put_i32_le(self.stack_id);
     }
 }
