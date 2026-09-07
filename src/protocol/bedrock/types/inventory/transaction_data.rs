@@ -68,6 +68,8 @@ impl TransactionData {
     }
 
     pub fn decode(&mut self, stream: &mut Reader) {
+        let has_value = stream.get_bool();
+        if !has_value { return }
         let action_count = stream.get_var_u32();
         for _ in 0..action_count {
             let action = NetworkInventoryAction::read(stream);
@@ -78,6 +80,9 @@ impl TransactionData {
 
 
     pub fn encode(&self, stream: &mut Writer) {
+        let has_value = self.get_actions().len() > 0;
+        stream.put_bool(has_value);
+        if !has_value { return }
         stream.put_var_u32(self.get_actions().len() as u32);
         for action in self.get_actions() {
             action.write(stream);
