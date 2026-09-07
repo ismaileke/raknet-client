@@ -8,7 +8,7 @@ use binary_utils::binary::{Reader, Writer};
 pub struct SubChunkEntryCommon {
     pub offset: SubChunkPositionOffset,
     pub request_result: u8,
-    pub terrain_data: Option<String>,
+    pub terrain_data: Option<Vec<u8>>,
     pub height_map: Option<SubChunkHeightMapInfo>,
     pub render_height_map: Option<SubChunkHeightMapInfo>,
 }
@@ -17,7 +17,7 @@ impl SubChunkEntryCommon {
     pub fn new(
         offset: SubChunkPositionOffset,
         request_result: u8,
-        terrain_data: Option<String>,
+        terrain_data: Option<Vec<u8>>,
         height_map: Option<SubChunkHeightMapInfo>,
         render_height_map: Option<SubChunkHeightMapInfo>,
     ) -> SubChunkEntryCommon {
@@ -33,7 +33,7 @@ impl SubChunkEntryCommon {
     pub fn read(stream: &mut Reader) -> SubChunkEntryCommon {
         let offset = SubChunkPositionOffset::read(stream);
         let request_result = stream.get_u8();
-        let terrain_data = PacketSerializer::read_optional(stream, |s| PacketSerializer::get_string(s));
+        let terrain_data = PacketSerializer::read_optional(stream, |s| PacketSerializer::get_byte_string(s));
         let height_map_data_type = stream.get_u8();
         let height_map = match height_map_data_type {
             SubChunkHeightMapType::NO_DATA => None,
@@ -65,7 +65,7 @@ impl SubChunkEntryCommon {
     pub fn write(&self, stream: &mut Writer) {
         self.offset.write(stream);
         stream.put_u8(self.request_result);
-        PacketSerializer::write_optional(stream, &self.terrain_data, |s, v| PacketSerializer::put_string(s, v));
+        PacketSerializer::write_optional(stream, &self.terrain_data, |s, v| PacketSerializer::put_byte_string(s, v));
         if let Some(height_map) = &self.height_map {
             if height_map.is_all_too_low() {
                 stream.put_u8(SubChunkHeightMapType::ALL_TOO_LOW);
