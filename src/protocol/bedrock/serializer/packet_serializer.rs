@@ -723,27 +723,23 @@ impl PacketSerializer {
         }
     }
 
-    fn read_dummy_optional(stream: &mut Reader) {
-        debug_assert_eq!(stream.get_u8(), 1, "dummy optional byte must be 1");
-    }
-
-    fn write_dummy_optional(stream: &mut Writer) {
-        stream.put_u8(1);
-    }
-
     pub fn read_double_optional<T, F>(stream: &mut Reader, read_fn: F) -> Option<T>
     where
         F: FnOnce(&mut Reader) -> T,
     {
-        Self::read_dummy_optional(stream);
-        Self::read_optional(stream, read_fn)
+        let outer = stream.get_bool();
+        if outer {
+            Self::read_optional(stream, read_fn)
+        } else {
+            None
+        }
     }
 
     pub fn write_double_optional<T, F>(stream: &mut Writer, value: &Option<T>, write_fn: F)
     where
         F: FnOnce(&mut Writer, &T),
     {
-        Self::write_dummy_optional(stream);
+        stream.put_bool(true);
         Self::write_optional(stream, value, write_fn);
     }
 }
