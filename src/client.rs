@@ -360,16 +360,31 @@ async fn start_network_thread(
                         .filter(|(_, asked)| now.duration_since(**asked) >= NACK_INTERVAL)
                         .map(|(s, _)| *s)
                         .collect();
-                    due.sort();
-                    due.truncate(MAX_NACKS_PER_PASS);
+                    due.sort_unstable();
 
-                    for missing in due {
-                        ack_buf.clear();
-                        Acknowledge::create(PacketType::NACK, 1, true, Option::from(missing), None, None).encode(&mut ack_buf);
-                        let _ = socket.send(ack_buf.as_slice()).await;
-                        if let Some(asked) = raknet_handler.missing_datagrams.get_mut(&missing) {
-                            *asked = now;
+                    let mut i = 0usize;
+                    let mut ranges_sent = 0usize;
+                    while i < due.len() && ranges_sent < MAX_NACKS_PER_PASS {
+                        let start = due[i];
+                        let mut end = start;
+                        while i + 1 < due.len() && due[i + 1] == end + 1 {
+                            i += 1;
+                            end = due[i];
                         }
+                        ack_buf.clear();
+                        if start == end {
+                            Acknowledge::create(PacketType::NACK, 1, true, Option::from(start), None, None).encode(&mut ack_buf);
+                        } else {
+                            Acknowledge::create(PacketType::NACK, 1, false, None, Option::from(start), Option::from(end)).encode(&mut ack_buf);
+                        }
+                        let _ = socket.send(ack_buf.as_slice()).await;
+                        for sconf in start..=end {
+                            if let Some(asked) = raknet_handler.missing_datagrams.get_mut(&sconf) {
+                                *asked = now;
+                            }
+                        }
+                        ranges_sent += 1;
+                        i += 1;
                     }
                 }
             }
@@ -443,12 +458,15 @@ async fn start_network_thread(
 
                 // Mark the skipped line numbers as missing; the NACK timer will request them again.
                 if (seq as i64) > raknet_handler.last_received_sequence_number {
-                    let start = (raknet_handler.last_received_sequence_number + 1).max(0) as u32;
                     let now = std::time::Instant::now();
+                    const RECV_WINDOW: i64 = 512;
+                    let floor = (seq as i64 - RECV_WINDOW).max(0);
+                    let start = (raknet_handler.last_received_sequence_number + 1).max(floor) as u32;
                     for missing in start..seq {
                         raknet_handler.missing_datagrams.entry(missing).or_insert(now - NACK_INTERVAL);
                     }
                     raknet_handler.last_received_sequence_number = seq as i64;
+                    raknet_handler.missing_datagrams.retain(|s, _| (*s as i64) >= floor);
                 }
                 raknet_handler.missing_datagrams.remove(&seq);
 
