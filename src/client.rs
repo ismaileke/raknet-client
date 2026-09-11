@@ -435,7 +435,7 @@ async fn start_network_thread(
                         let packet_id = stream.get_u8();
                         let packet_type = PacketType::from_byte(packet_id);
 
-                        if let PacketType::ConnectedPing = packet_type {
+                        /*if let PacketType::ConnectedPing = packet_type {
                             let connected_ping = ConnectedPing::decode(&mut stream);
                             if debug { connected_ping.debug(); }
 
@@ -447,7 +447,7 @@ async fn start_network_thread(
                             raknet_handler.frame_number_cache.sequence_number += 1;
                             let _ = socket.send(datagram.as_slice()).await;
                             continue;
-                        }
+                        }*/
 
                         let response_raknet_packet = raknet_handler.handle_packet(&mut should_stop, debug, target_address.clone(), target_port, packet_type, &mut stream, &mut raknet_out);
                         if !response_raknet_packet.is_empty() {
