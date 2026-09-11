@@ -20,10 +20,7 @@ impl ConnectedPong {
         stream.put_u64_be(self.pong_time);
     }
 
-    pub fn decode(bytes: &[u8]) -> ConnectedPong {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> ConnectedPong {
         let ping_time = stream.get_u64_be();
         let pong_time = stream.get_u64_be();
 

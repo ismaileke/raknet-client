@@ -25,10 +25,7 @@ impl ConnReqAccepted {
         stream.put_u64_be(self.pong_time);
     }
     
-    pub fn decode(bytes: &[u8]) -> ConnReqAccepted {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> ConnReqAccepted {
         let (client_address, offset) = InternetAddress::get_address(stream.remaining()).unwrap();
         stream.set_offset(stream.offset() + offset);
         let system_index = stream.get_u16_be();

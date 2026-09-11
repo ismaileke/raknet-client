@@ -23,10 +23,7 @@ impl OpenConnReply2 {
         stream.put_bool(self.encryption_enabled);
     }
 
-    pub fn decode(bytes: &[u8]) -> OpenConnReply2 {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> OpenConnReply2 {
         let magic = stream.get(16).try_into().unwrap();
         let server_guid = stream.get_u64_be();
         let (client_address, offset) = InternetAddress::get_address(stream.remaining()).unwrap();

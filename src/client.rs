@@ -436,7 +436,7 @@ async fn start_network_thread(
                         let packet_type = PacketType::from_byte(packet_id);
 
                         if let PacketType::ConnectedPing = packet_type {
-                            let connected_ping = ConnectedPing::decode(stream.get_buffer());
+                            let connected_ping = ConnectedPing::decode(&mut stream);
                             if debug { connected_ping.debug(); }
 
                             let mut connected_pong = Writer::new();
@@ -486,7 +486,7 @@ async fn start_network_thread(
                                     if debug { nack.debug(true); }
                                 }
                                 PacketType::ConnectedPing => {
-                                    let connected_ping = ConnectedPing::decode(stream.get_buffer());
+                                    let connected_ping = ConnectedPing::decode(&mut stream);
                                     if debug { connected_ping.debug(); }
 
                                     let mut connected_pong = Writer::new();
@@ -498,7 +498,7 @@ async fn start_network_thread(
                                     socket.send(datagram.as_slice()).await.expect("ConnectedPong Packet could not be sent");
                                 },
                                 PacketType::ConnectedPong => {
-                                    let connected_pong = ConnectedPong::decode(stream.get_buffer());
+                                    let connected_pong = ConnectedPong::decode(&mut stream);
                                     if debug { connected_pong.debug(); }
                                     /*let connected_ping = connected_ping::create(Utc::now().timestamp()).encode();
                                     let frame = Datagram::create_frame(connected_ping, UNRELIABLE, &frame_number_cache, None);

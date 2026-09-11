@@ -40,10 +40,7 @@ impl OpenConnReq2 {
         stream.put_u64_be(self.client_guid);
     }
 
-    pub fn decode(bytes: &[u8]) -> OpenConnReq2 {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> OpenConnReq2 {
         let magic = stream.get(16).try_into().unwrap();
 
         let mut cookie: Option<u32> = None;

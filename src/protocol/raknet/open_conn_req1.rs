@@ -24,10 +24,7 @@ impl OpenConnReq1 {
         }
     }
 
-    pub fn decode(bytes: &[u8]) -> OpenConnReq1 {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> OpenConnReq1 {
         let magic = stream.get(16).try_into().unwrap();
         let protocol = stream.get_u8();
         let mtu_size = stream.remaining_byte_count() as u16;

@@ -24,10 +24,7 @@ impl OpenConnReply1 {
         stream.put_u16_be(self.mtu);
     }
     
-    pub fn decode(bytes: &[u8]) -> OpenConnReply1 {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> OpenConnReply1 {
         let magic = stream.get(16).try_into().unwrap();
         let server_guid = stream.get_u64_be();
         let server_security = stream.get_bool();

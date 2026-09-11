@@ -136,7 +136,7 @@ impl RakNetPacketHandler {
 
         match packet_type {
             PacketType::OpenConnReply1 => {
-                let open_conn_reply1 = OpenConnReply1::decode(stream.get_buffer());
+                let open_conn_reply1 = OpenConnReply1::decode(stream);
                 if debug { open_conn_reply1.debug(); }
 
                 OpenConnReq2::new(MAGIC, InternetAddress::new(4, target_address.to_string(), target_port), open_conn_reply1.cookie, false, open_conn_reply1.mtu, self.client_guid as u64).encode(out);
@@ -144,7 +144,7 @@ impl RakNetPacketHandler {
                 //client.socket.send(&req2).expect("Open Connection Request 2 Packet could not be sent");
             },
             PacketType::OpenConnReply2 => {
-                let open_conn_reply2 = OpenConnReply2::decode(stream.get_buffer());
+                let open_conn_reply2 = OpenConnReply2::decode(stream);
                 if debug { open_conn_reply2.debug(); }
 
                 let mut conn_req = Writer::with_capacity(64);
@@ -157,7 +157,7 @@ impl RakNetPacketHandler {
                 //client.socket.send(&datagram).expect("Connection Request Packet could not be sent");
             },
             PacketType::ConnReqAccepted => {
-                let conn_req_accepted = ConnReqAccepted::decode(stream.get_buffer());
+                let conn_req_accepted = ConnReqAccepted::decode(stream);
                 if debug { conn_req_accepted.debug(); }
 
                 let mut w1 = Writer::with_capacity(1500);
@@ -188,7 +188,7 @@ impl RakNetPacketHandler {
                 //should_stop = true;
             },
             PacketType::IncompatibleProtocol => {
-                let incompatible_protocol = IncompatibleProtocol::decode(stream.get_buffer());
+                let incompatible_protocol = IncompatibleProtocol::decode(stream);
                 println!("{}Incompatible Protocol Version, Server Protocol Version: {}{}", COLOR_RED, incompatible_protocol.server_protocol, COLOR_WHITE);
                 *should_stop = true;
             },

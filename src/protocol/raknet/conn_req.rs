@@ -20,10 +20,7 @@ impl ConnReq {
         stream.put_bool(self.secure);
     }
 
-    pub fn decode(bytes: &[u8]) -> ConnReq {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> ConnReq {
         let client_guid = stream.get_u64_be();
         let request_time = stream.get_u64_be();
         let secure = stream.get_bool();

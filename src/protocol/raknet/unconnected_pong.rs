@@ -4,14 +4,14 @@ use crate::utils::color_format;
 use crate::utils::color_format::COLOR_WHITE;
 use crate::protocol::raknet::packet_ids;
 
-pub struct UnconnectedPong<'a> {
+pub struct UnconnectedPong {
     pub pong_time: u64,
     pub server_id: u64,
-    pub server_name: &'a str
+    pub server_name: String
 }
 
-impl<'a> UnconnectedPong<'a> {
-    pub fn create(pong_time: u64, server_id: u64, server_name: &'a str) -> UnconnectedPong<'a> {
+impl UnconnectedPong {
+    pub fn create(pong_time: u64, server_id: u64, server_name: String) -> UnconnectedPong {
         UnconnectedPong { pong_time, server_id, server_name }
     }
 
@@ -25,15 +25,12 @@ impl<'a> UnconnectedPong<'a> {
         stream.put(self.server_name.as_bytes());
     }
 
-    pub fn decode(bytes: &[u8]) -> UnconnectedPong<'_> {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> UnconnectedPong {
         let pong_time = stream.get_u64_be();
         let server_id = stream.get_u64_be();
         let _ = stream.get(16);
         let len = stream.get_u16_be();
-        let server_name = str::from_utf8(stream.get(len as usize)).expect("Vec<u8> to String UTF8 conversion failed");
+        let server_name = String::from_utf8(Vec::from(stream.get(len as usize))).expect("Vec<u8> to String UTF8 conversion failed");
 
         UnconnectedPong { pong_time, server_id, server_name }
     }

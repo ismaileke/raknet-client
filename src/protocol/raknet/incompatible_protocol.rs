@@ -20,10 +20,7 @@ impl IncompatibleProtocol {
         stream.put_u64_be(self.server_guid);
     }
 
-    pub fn decode(bytes: &[u8]) -> IncompatibleProtocol {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> IncompatibleProtocol {
         let server_protocol = stream.get_u8();
         let magic = stream.get(16).try_into().unwrap();
         let server_guid = stream.get_u64_be();

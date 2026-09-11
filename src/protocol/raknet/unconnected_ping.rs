@@ -22,10 +22,7 @@ impl UnconnectedPing {
         stream.put_u64_be(self.client_guid);
     }
 
-    pub fn decode(bytes: &[u8]) -> UnconnectedPing {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> UnconnectedPing {
         let ping_time = stream.get_u64_be();
         let _ = stream.get(16);
         let client_guid = stream.get_u64_be();

@@ -30,10 +30,7 @@ impl NewIncomingConn {
         stream.put_u64_be(self.pong_time);
     }
 
-    pub fn decode(bytes: &[u8]) -> NewIncomingConn {
-        let mut stream = Reader::new(bytes);
-
-        let _ = stream.get_u8();
+    pub fn decode(stream: &mut Reader) -> NewIncomingConn {
         let (server_address, offset) = InternetAddress::get_address(stream.remaining()).unwrap();
         stream.set_offset(stream.offset() + offset);
         let mut system_addresses: [InternetAddress; 20] = core::array::from_fn(|_| InternetAddress::new(4, "127.0.0.1".to_string(), 0));
