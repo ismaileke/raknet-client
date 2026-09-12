@@ -14,7 +14,7 @@ use crate::protocol::raknet::acknowledge::Acknowledge;
 use crate::protocol::raknet::connected_ping::ConnectedPing;
 use crate::protocol::raknet::connected_pong::ConnectedPong;
 use crate::protocol::raknet::frame_set;
-use crate::protocol::raknet::frame_set::{Datagram, UNRELIABLE};
+use crate::protocol::raknet::frame_set::{Datagram, RELIABLE_ORDERED, UNRELIABLE};
 use crate::protocol::raknet::game_packet::GamePacket;
 use crate::protocol::raknet::open_conn_req1::OpenConnReq1;
 use crate::protocol::raknet::packet_ids::{PacketType, MAGIC};
@@ -434,20 +434,34 @@ async fn start_network_thread(
                         let mut stream = Reader::new(frame.body.as_slice());
                         let packet_id = stream.get_u8();
                         let packet_type = PacketType::from_byte(packet_id);
-
-                        /*if let PacketType::ConnectedPing = packet_type {
+                        //println!("Packet Type {:?}", packet_type);
+                        if let PacketType::ConnectedPing = packet_type {
                             let connected_ping = ConnectedPing::decode(&mut stream);
                             if debug { connected_ping.debug(); }
 
                             let mut connected_pong = Writer::new();
-                            ConnectedPong::create(connected_ping.ping_time, Utc::now().timestamp() as u64).encode(&mut connected_pong);
+                            ConnectedPong::create(connected_ping.ping_time, raknet_handler.timestamp()).encode(&mut connected_pong);
                             let frame = Datagram::create_frame(connected_pong.as_slice(), UNRELIABLE, &raknet_handler.frame_number_cache, None);
                             let mut datagram = Writer::new();
                             Datagram::create(vec![frame], &raknet_handler.frame_number_cache).to_binary(&mut datagram);
                             raknet_handler.frame_number_cache.sequence_number += 1;
                             let _ = socket.send(datagram.as_slice()).await;
                             continue;
-                        }*/
+                        }
+
+                        if let PacketType::ConnectedPong = packet_type {
+                            let connected_pong = ConnectedPong::decode(&mut stream);
+                            if debug { connected_pong.debug(); }
+
+                            let mut connected_ping = Writer::new();
+                            ConnectedPing::create(raknet_handler.timestamp()).encode(&mut connected_ping);
+                            let frame = Datagram::create_frame(connected_ping.as_slice(), UNRELIABLE, &raknet_handler.frame_number_cache, None);
+                            let mut datagram = Writer::new();
+                            Datagram::create(vec![frame], &raknet_handler.frame_number_cache).to_binary(&mut datagram);
+                            raknet_handler.frame_number_cache.sequence_number += 1;
+                            let _ = socket.send(datagram.as_slice()).await;
+                            continue;
+                        }
 
                         let response_raknet_packet = raknet_handler.handle_packet(&mut should_stop, debug, target_address.clone(), target_port, packet_type, &mut stream, &mut raknet_out);
                         if !response_raknet_packet.is_empty() {
@@ -490,21 +504,28 @@ async fn start_network_thread(
                                     if debug { connected_ping.debug(); }
 
                                     let mut connected_pong = Writer::new();
-                                    ConnectedPong::create(connected_ping.ping_time, Utc::now().timestamp() as u64).encode(&mut connected_pong);
-                                    let frame = Datagram::create_frame(connected_pong.as_slice(), UNRELIABLE, &raknet_handler.frame_number_cache, None);
+                                    ConnectedPong::create(connected_ping.ping_time, raknet_handler.timestamp()).encode(&mut connected_pong);
+                                    let frame = Datagram::create_frame(connected_pong.as_slice(), RELIABLE_ORDERED, &raknet_handler.frame_number_cache, None);
                                     let mut datagram = Writer::new();
                                     Datagram::create(vec![frame], &raknet_handler.frame_number_cache).to_binary(&mut datagram);
                                     raknet_handler.frame_number_cache.sequence_number += 1;
+                                    raknet_handler.frame_number_cache.reliable_frame_index += 1;
+                                    raknet_handler.frame_number_cache.ordered_frame_index += 1;
                                     socket.send(datagram.as_slice()).await.expect("ConnectedPong Packet could not be sent");
                                 },
                                 PacketType::ConnectedPong => {
                                     let connected_pong = ConnectedPong::decode(&mut stream);
                                     if debug { connected_pong.debug(); }
-                                    /*let connected_ping = connected_ping::create(Utc::now().timestamp()).encode();
-                                    let frame = Datagram::create_frame(connected_ping, UNRELIABLE, &frame_number_cache, None);
-                                    let datagram = Datagram::create(vec![frame], &frame_number_cache).to_binary();
-                                    frame_number_cache.sequence_number += 1;
-                                    socket.send(&datagram).await.expect("ConnectedPing Packet could not be sent");*/
+
+                                    let mut connected_ping = Writer::new();
+                                    ConnectedPing::create(raknet_handler.timestamp()).encode(&mut connected_ping);
+                                    let frame = Datagram::create_frame(connected_ping.as_slice(), RELIABLE_ORDERED, &raknet_handler.frame_number_cache, None);
+                                    let mut datagram = Writer::new();
+                                    Datagram::create(vec![frame], &raknet_handler.frame_number_cache).to_binary(&mut datagram);
+                                    raknet_handler.frame_number_cache.sequence_number += 1;
+                                    raknet_handler.frame_number_cache.reliable_frame_index += 1;
+                                    raknet_handler.frame_number_cache.ordered_frame_index += 1;
+                                    socket.send(datagram.as_slice()).await.expect("ConnectedPing Packet could not be sent");
                                 },
                                 PacketType::ConnReqAccepted => {
                                     let response = raknet_handler.handle_packet(&mut should_stop, debug, target_address.clone(), target_port, PacketType::ConnReqAccepted, &mut stream, &mut raknet_out);

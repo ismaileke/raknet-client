@@ -19,6 +19,7 @@ use binary_utils::binary::{Reader, Writer};
 use chrono::Utc;
 use rand::{rng, RngExt};
 use std::collections::{HashMap, HashSet};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 const SEEN_RELIABLE_LIMIT: usize = 65_536;
 const SEEN_RELIABLE_KEEP: u32 = 32_768;
@@ -31,10 +32,11 @@ pub struct RakNetPacketHandler {
     pub last_received_fragment_packets: HashMap<u16, HashMap<u32, Vec<u8>>>, // split_id: index => buffer
     pub last_received_sequence_number: i64,
     pub last_handled_reliable_frame_index: i64,
-    pub missing_datagrams: HashMap<u32, std::time::Instant>,
+    pub missing_datagrams: HashMap<u32, Instant>,
     pub seen_reliable: HashSet<u32>,
     pub ordered_queue: HashMap<u8, HashMap<u32, Vec<u8>>>,
     pub next_ordered_index: HashMap<u8, u32>,
+    pub start_time: SystemTime,
 }
 
 impl RakNetPacketHandler {
@@ -48,6 +50,7 @@ impl RakNetPacketHandler {
         let last_received_sequence_number = -1;
         let last_handled_reliable_frame_index = -1;
         let missing_datagrams = HashMap::new();
+        let start_time = SystemTime::now();
 
         RakNetPacketHandler {
             seen_reliable: HashSet::new(),
@@ -61,7 +64,13 @@ impl RakNetPacketHandler {
             last_received_sequence_number,
             last_handled_reliable_frame_index,
             missing_datagrams,
+            start_time
         }
+    }
+
+    #[inline]
+    pub fn timestamp(&self) -> u64 {
+        self.start_time.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64
     }
 
     pub fn accept_frame(&mut self, frame: &Frame) -> Vec<Vec<u8>> {
@@ -172,7 +181,7 @@ impl RakNetPacketHandler {
                 self.frame_number_cache.ordered_frame_index += 1;
 
                 // Connected Ping
-                ConnectedPing::create(Utc::now().timestamp() as u64).encode(&mut w2);
+                ConnectedPing::create(self.timestamp()).encode(&mut w2);
                 let frame_two = Datagram::create_frame(w2.as_slice(), UNRELIABLE, &self.frame_number_cache, None);
 
                 // Request Network Settings Packet
